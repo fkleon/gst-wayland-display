@@ -188,10 +188,12 @@ impl State {
                 dmabuf_state.create_global::<State>(&dh, formats.clone())
             };
 
-            match renderer.bind_wl_display(&dh) {
-                Ok(_) => tracing::info!("EGL hardware-acceleration enabled"),
-                Err(err) => tracing::info!(?err, "Failed to initialize EGL hardware-acceleration"),
-            }
+            // We intentionally do not call renderer.bind_wl_display() here.
+            // Mesa's EGL_WL_bind_display extension advertises its own wl_drm global,
+            // which collides with the explicit wl_drm global we create below and breaks
+            // nested compositors such as Sway/wlroots.
+            // Client buffers are still imported via the explicit wl_drm/dmabuf path.
+            tracing::info!("Using explicit wl_drm; skipping EGL_WL_bind_display");
 
             // wl_drm (mesa protocol, so we don't need EGL_WL_bind_display)
             let wl_drm_global = create_drm_global::<State>(
